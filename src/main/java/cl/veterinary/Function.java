@@ -8,11 +8,7 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.EventGridTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
 
-/**
- * Azure Functions with HTTP Trigger.
- */
 public class Function {
-    
 
     @FunctionName("EventGridEvents")
     public void run(
@@ -22,20 +18,48 @@ public class Function {
         Logger logger = context.getLogger();
         logger.info("Función con Event Grid trigger ejecutada.");
 
-        // Deserializar el contenido
-        Gson gson = new Gson();
-        JsonObject eventGridEvent = gson.fromJson(content, JsonObject.class);
+        try {
+            // Deserializar el contenido del evento
+            Gson gson = new Gson();
+            JsonObject eventGridEvent = gson.fromJson(content, JsonObject.class);
 
-        // Logear los detalles del evento
-        logger.info("Evento recibido: " + eventGridEvent.toString());
+            // Extraer campos importantes
+            String eventType = eventGridEvent.get("eventType").getAsString();
+            JsonObject data = eventGridEvent.getAsJsonObject("data");
 
-        // Procesar la data del evento
-        String eventType = eventGridEvent.get("eventType").getAsString();
-        String data = eventGridEvent.get("data").toString();
+            logger.info("Evento recibido: " + eventGridEvent.toString());
+            logger.info("Tipo de evento: " + eventType);
+            logger.info("Data del evento: " + data.toString());
 
-        logger.info("Tipo de evento: " + eventType);
-        logger.info("Data del evento: " + data);
+            // Procesar según el tipo de evento
+            switch (eventType) {
+                case "Rol.CREATE":
+                    logger.info("✅ Se recibió una solicitud de CREACIÓN de Rol.");
+                    logger.info("Datos del nuevo Rol: " + data.toString());
+                    break;
+
+                case "Rol.UPDATE":
+                    logger.info("✅ Se recibió una solicitud de ACTUALIZACIÓN de Rol.");
+                    logger.info("Datos del Rol actualizado: " + data.toString());
+                    break;
+
+                case "Rol.DELETE":
+                    logger.info("✅ Se recibió una solicitud de ELIMINACIÓN de Rol.");
+                    logger.info("Datos del Rol eliminado: " + data.toString());
+                    break;
+
+                case "Rol.GET":
+                    logger.info("✅ Se recibió una solicitud de CONSULTA de Rol.");
+                    logger.info("ID consultado: " + data.get("id").getAsString());
+                    break;
+
+                default:
+                    logger.warning("⚠️ Tipo de evento no reconocido: " + eventType);
+                    break;
+            }
+
+        } catch (Exception e) {
+            logger.severe("Error procesando evento: " + e.getMessage());
+        }
     }
-
-
 }
